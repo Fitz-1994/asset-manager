@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.assetmanager.mapper.PositionMapper">
+
+    <resultMap id="BaseResultMap" type="com.assetmanager.entity.Position">
+        <id column="id" property="id"/>
+        <result column="account_id" property="accountId"/>
+        <result column="target_id" property="targetId"/>
+        <result column="quantity" property="quantity"/>
+        <result column="updated_at" property="updatedAt" typeHandler="com.assetmanager.mapper.InstantTypeHandler"/>
+    </resultMap>
+
+    <insert id="insert">
+        INSERT INTO positions (account_id, target_id, quantity, updated_at)
+        VALUES (#{accountId}, #{targetId}, #{quantity}, #{updatedAt, typeHandler=com.assetmanager.mapper.InstantTypeHandler})
+        <selectKey keyProperty="id" resultType="long" order="AFTER">
+            SELECT last_insert_rowid()
+        </selectKey>
+    </insert>
+
+    <update id="update">
+        UPDATE positions SET quantity = #{quantity}, updated_at = #{updatedAt, typeHandler=com.assetmanager.mapper.InstantTypeHandler}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM positions WHERE id = #{id}
+    </delete>
+
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT id, account_id, target_id, quantity, updated_at FROM positions WHERE id = #{id}
+    </select>
+
+    <select id="findByAccountId" resultMap="BaseResultMap">
+        SELECT id, account_id, target_id, quantity, updated_at FROM positions WHERE account_id = #{accountId}
+    </select>
+
+    <select id="findByAccountIdAndTargetId" resultMap="BaseResultMap">
+        SELECT id, account_id, target_id, quantity, updated_at FROM positions WHERE account_id = #{accountId} AND target_id = #{targetId}
+    </select>
+</mapper>

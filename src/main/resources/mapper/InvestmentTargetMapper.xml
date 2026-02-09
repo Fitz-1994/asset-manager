@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.assetmanager.mapper.InvestmentTargetMapper">
+
+    <resultMap id="BaseResultMap" type="com.assetmanager.entity.InvestmentTarget">
+        <id column="id" property="id"/>
+        <result column="market" property="market"/>
+        <result column="code" property="code"/>
+        <result column="name" property="name"/>
+        <result column="currency" property="currency"/>
+        <result column="last_price" property="lastPrice"/>
+        <result column="price_updated_at" property="priceUpdatedAt" typeHandler="com.assetmanager.mapper.InstantTypeHandler"/>
+        <result column="created_at" property="createdAt" typeHandler="com.assetmanager.mapper.InstantTypeHandler"/>
+    </resultMap>
+
+    <insert id="insert">
+        INSERT INTO investment_targets (market, code, name, currency, last_price, price_updated_at, created_at)
+        VALUES (#{market}, #{code}, #{name}, #{currency}, #{lastPrice}, #{priceUpdatedAt, typeHandler=com.assetmanager.mapper.InstantTypeHandler}, #{createdAt, typeHandler=com.assetmanager.mapper.InstantTypeHandler})
+        <selectKey keyProperty="id" resultType="long" order="AFTER">
+            SELECT last_insert_rowid()
+        </selectKey>
+    </insert>
+
+    <update id="update">
+        UPDATE investment_targets SET name = #{name}, currency = #{currency}, last_price = #{lastPrice}, price_updated_at = #{priceUpdatedAt, typeHandler=com.assetmanager.mapper.InstantTypeHandler}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM investment_targets WHERE id = #{id}
+    </delete>
+
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT id, market, code, name, currency, last_price, price_updated_at, created_at FROM investment_targets WHERE id = #{id}
+    </select>
+
+    <select id="findByMarketAndCode" resultMap="BaseResultMap">
+        SELECT id, market, code, name, currency, last_price, price_updated_at, created_at FROM investment_targets WHERE market = #{market} AND code = #{code}
+    </select>
+
+    <select id="findByMarketOrderByCode" resultMap="BaseResultMap">
+        SELECT id, market, code, name, currency, last_price, price_updated_at, created_at FROM investment_targets WHERE market = #{market} ORDER BY code
+    </select>
+
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT id, market, code, name, currency, last_price, price_updated_at, created_at FROM investment_targets ORDER BY market, code
+    </select>
+</mapper>

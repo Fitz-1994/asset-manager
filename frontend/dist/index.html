@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>私人资产数据管理平台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface2: #243044;
+      --border: #2d3a4f;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-dim: #388bfd66;
+      --success: #3fb950;
+      --danger: #f85149;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Noto Sans SC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .auth-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at 50% 0%, var(--surface2) 0%, transparent 60%);
+    }
+    .auth-card {
+      width: 100%;
+      max-width: 380px;
+      padding: 2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .auth-card h1 {
+      margin: 0 0 1.5rem;
+      font-size: 1.35rem;
+      font-weight: 600;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    input[type="text"], input[type="password"], input[type="number"], select {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: inherit;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .btn {
+      padding: 0.6rem 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.95rem;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      width: 100%;
+      margin-top: 0.5rem;
+    }
+    .btn-primary:hover { filter: brightness(1.1); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+    }
+    .btn-ghost:hover { color: var(--text); }
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .tabs button {
+      padding: 0.4rem 0.8rem;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .tabs button.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .app-layout {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 220px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 1rem 0;
+    }
+    .sidebar .user {
+      padding: 0 1rem 1rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    .nav-item {
+      display: block;
+      width: 100%;
+      padding: 0.5rem 1rem;
+      text-align: left;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.95rem;
+    }
+    .nav-item:hover { color: var(--text); background: var(--surface2); }
+    .nav-item.active { color: var(--accent); background: var(--accent-dim); }
+    .main {
+      flex: 1;
+      padding: 1.5rem 2rem;
+      overflow: auto;
+    }
+    .main h2 {
+      margin: 0 0 1rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .stat-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .stat-row:last-child { border-bottom: none; }
+    .total-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--accent);
+      font-family: "JetBrains Mono", monospace;
+    }
+    .chart-container {
+      width: 100%;
+      height: 320px;
+      margin-top: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th { color: var(--text-muted); font-weight: 500; font-size: 0.85rem; }
+    .hidden { display: none !important; }
+    .error { color: var(--danger); font-size: 0.9rem; margin-top: 0.5rem; }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      min-width: 320px;
+      max-width: 90vw;
+    }
+    .modal h3 { margin: 0 0 1rem; }
+    .modal-actions { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end; }
+  </style>
+</head>
+<body>
+  <div id="auth-screen" class="auth-wrap">
+    <div class="auth-card">
+      <h1>私人资产数据管理平台</h1>
+      <div class="tabs">
+        <button type="button" class="active" data-tab="login">登录</button>
+        <button type="button" data-tab="register">注册</button>
+      </div>
+      <form id="login-form">
+        <div class="form-group">
+          <label>用户名</label>
+          <input type="text" name="username" required />
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" name="password" required />
+        </div>
+        <button type="submit" class="btn btn-primary">登录</button>
+      </form>
+      <form id="register-form" class="hidden">
+        <div class="form-group">
+          <label>用户名</label>
+          <input type="text" name="username" required />
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" name="password" required />
+        </div>
+        <button type="submit" class="btn btn-primary">注册</button>
+      </form>
+      <p id="auth-error" class="error hidden"></p>
+    </div>
+  </div>
+
+  <div id="app-screen" class="app-layout hidden">
+    <aside class="sidebar">
+      <div class="user">用户：<span id="current-username"></span></div>
+      <button type="button" class="nav-item active" data-page="dashboard">总览</button>
+      <button type="button" class="nav-item" data-page="accounts">账户</button>
+      <button type="button" class="nav-item" data-page="targets">投资标的</button>
+      <button type="button" class="nav-item" data-page="snapshots">资产走势</button>
+      <button type="button" class="nav-item btn-ghost" id="logout-btn">退出</button>
+    </aside>
+    <main class="main">
+      <div id="page-dashboard">
+        <h2>资产总览</h2>
+        <div class="card">
+          <div class="stat-row">
+            <span>总资产（本币合计）</span>
+            <span class="total-value" id="dashboard-total">0</span>
+          </div>
+        </div>
+        <div class="card">
+          <h3 style="margin:0 0 0.75rem">账户分布</h3>
+          <div id="pie-chart" class="chart-container"></div>
+        </div>
+        <div class="card">
+          <h3 style="margin:0 0 0.75rem">账户列表</h3>
+          <div id="dashboard-accounts"></div>
+        </div>
+      </div>
+      <div id="page-accounts" class="hidden">
+        <div class="top-bar">
+          <h2 style="margin:0">账户管理</h2>
+          <button type="button" class="btn btn-primary" id="btn-add-account">添加账户</button>
+        </div>
+        <div class="card">
+          <div id="accounts-list"></div>
+        </div>
+      </div>
+      <div id="page-targets" class="hidden">
+        <div class="top-bar">
+          <h2 style="margin:0">投资标的</h2>
+          <button type="button" class="btn btn-primary" id="btn-add-target">添加标的</button>
+          <button type="button" class="btn btn-ghost" id="btn-refresh-prices">刷新价格</button>
+        </div>
+        <div class="card">
+          <div id="targets-list"></div>
+        </div>
+      </div>
+      <div id="page-snapshots" class="hidden">
+        <h2>资产走势与收益率</h2>
+        <div class="card">
+          <h3 style="margin:0 0 0.75rem">净值走势</h3>
+          <div id="series-chart" class="chart-container"></div>
+        </div>
+        <div class="card">
+          <h3 style="margin:0 0 0.75rem">累计收益率（相对首日）</h3>
+          <div id="return-chart" class="chart-container"></div>
+        </div>
+        <div class="card">
+          <h3 style="margin:0 0 0.75rem">快照记录</h3>
+          <div id="snapshots-list"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="modal-backdrop" class="modal-backdrop hidden">
+    <div class="modal" id="modal-content"></div>
+  </div>
+
+  <script>
+    const API = '/api';
+    let token = localStorage.getItem('token');
+    let user = JSON.parse(localStorage.getItem('user') || 'null');
+
+    function authHeaders() {
+      return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+    }
+    async function api(path, opts = {}) {
+      const res = await fetch(API + path, { ...opts, headers: { ...authHeaders(), ...opts.headers } });
+      if (res.status === 401) { logout(); return; }
+      const text = await res.text();
+      let data = null;
+      try { data = text ? JSON.parse(text) : null; } catch (_) {}
+      if (!res.ok) throw new Error(data?.detail || res.statusText);
+      return data;
+    }
+
+    function showAuth() {
+      document.getElementById('auth-screen').classList.remove('hidden');
+      document.getElementById('app-screen').classList.add('hidden');
+    }
+    function showApp() {
+      document.getElementById('auth-screen').classList.add('hidden');
+      document.getElementById('app-screen').classList.remove('hidden');
+      document.getElementById('current-username').textContent = user?.username || '';
+      if (document.querySelector('.nav-item[data-page="dashboard"]')) go('dashboard');
+    }
+    function logout() {
+      token = null;
+      user = null;
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      showAuth();
+    }
+
+    document.querySelectorAll('.tabs button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('login-form').classList.toggle('hidden', btn.dataset.tab !== 'login');
+        document.getElementById('register-form').classList.toggle('hidden', btn.dataset.tab !== 'register');
+        document.getElementById('auth-error').classList.add('hidden');
+      });
+    });
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const errEl = document.getElementById('auth-error');
+      errEl.classList.add('hidden');
+      try {
+        const res = await fetch(API + '/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: (fd.get('username') || '').trim(), password: fd.get('password') || '' })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.access_token) {
+          token = data.access_token;
+          user = data.user;
+          localStorage.setItem('token', token);
+          localStorage.setItem('user', JSON.stringify(user));
+          showApp();
+          return;
+        }
+        const msg = typeof data.detail === 'string' ? data.detail
+          : Array.isArray(data.detail) && data.detail.length
+            ? (data.detail[0].msg || data.detail[0].loc?.join('.') || '请求参数错误')
+            : (data.detail || '登录失败');
+        errEl.textContent = msg;
+        errEl.classList.remove('hidden');
+      } catch (err) {
+        errEl.textContent = err.message || '网络错误，请稍后重试';
+        errEl.classList.remove('hidden');
+      }
+    });
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const errEl = document.getElementById('auth-error');
+      errEl.classList.add('hidden');
+      try {
+        const res = await fetch(API + '/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: (fd.get('username') || '').trim(), password: fd.get('password') || '' })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.access_token) {
+          token = data.access_token;
+          user = data.user;
+          localStorage.setItem('token', token);
+          localStorage.setItem('user', JSON.stringify(user));
+          showApp();
+          return;
+        }
+        const msg = typeof data.detail === 'string' ? data.detail
+          : Array.isArray(data.detail) && data.detail.length
+            ? (data.detail[0].msg || data.detail[0].loc?.join('.') || '请求参数错误')
+            : (data.detail || '注册失败');
+        errEl.textContent = msg;
+        errEl.classList.remove('hidden');
+      } catch (err) {
+        errEl.textContent = err.message || '网络错误，请稍后重试';
+        errEl.classList.remove('hidden');
+      }
+    });
+    document.getElementById('logout-btn').addEventListener('click', logout);
+
+    function go(page) {
+      document.querySelectorAll('.nav-item[data-page]').forEach(n => n.classList.remove('active'));
+      document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
+      document.querySelectorAll('[id^="page-"]').forEach(el => el.classList.add('hidden'));
+      const el = document.getElementById('page-' + page);
+      if (el) el.classList.remove('hidden');
+      if (page === 'dashboard') loadDashboard();
+      if (page === 'accounts') loadAccounts();
+      if (page === 'targets') loadTargets();
+      if (page === 'snapshots') loadSnapshots();
+    }
+    document.querySelectorAll('.nav-item[data-page]').forEach(btn => {
+      btn.addEventListener('click', () => go(btn.dataset.page));
+    });
+
+    async function loadDashboard() {
+      try {
+        const accounts = await api('/accounts');
+        const total = accounts.reduce((s, a) => s + (a.value || 0), 0);
+        document.getElementById('dashboard-total').textContent = total.toLocaleString('zh-CN', { minimumFractionDigits: 2 });
+        const listEl = document.getElementById('dashboard-accounts');
+        listEl.innerHTML = accounts.map(a => `
+          <div class="stat-row">
+            <span>${a.name} (${a.currency})</span>
+            <span>${(a.value ?? 0).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</span>
+          </div>
+        `).join('');
+        const pie = echarts.init(document.getElementById('pie-chart'));
+        pie.setOption({
+          tooltip: { trigger: 'item' },
+          color: ['#58a6ff','#3fb950','#d29922','#a371f7','#f85149'],
+          series: [{
+            type: 'pie',
+            radius: ['40%','70%'],
+            data: accounts.filter(a => a.value > 0).map(a => ({ value: a.value, name: a.name })),
+            label: { color: '#e6edf3' }
+          }]
+        });
+      } catch (e) {
+        document.getElementById('dashboard-accounts').innerHTML = '<p class="error">加载失败</p>';
+      }
+    }
+
+    async function loadAccounts() {
+      try {
+        const accounts = await api('/accounts');
+        const listEl = document.getElementById('accounts-list');
+        listEl.innerHTML = `
+          <table>
+            <thead><tr><th>名称</th><th>币种</th><th>类型</th><th>当前值</th><th></th></tr></thead>
+            <tbody>
+              ${accounts.map(a => `
+                <tr>
+                  <td>${a.name}</td>
+                  <td>${a.currency}</td>
+                  <td>${a.type} / ${a.subtype || '-'}</td>
+                  <td>${(a.value ?? 0).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</td>
+                  <td>
+                    <button type="button" class="btn btn-ghost" data-account-id="${a.id}" data-account-name="${a.name}" data-account-subtype="${a.subtype || ''}">管理</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        listEl.querySelectorAll('[data-account-id]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const accountId = btn.dataset.accountId;
+            currentAccountName = btn.dataset.accountName || '';
+            window.location.hash = `#account/${accountId}`;
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+            if (btn.dataset.accountSubtype === 'investment') {
+              showPositions(accountId);
+            } else {
+              showBalance(accountId);
+            }
+          });
+        });
+      } catch (e) {
+        document.getElementById('accounts-list').innerHTML = '<p class="error">加载失败</p>';
+      }
+    }
+
+    let currentAccountName = '';
+    function closeModal() {
+      document.getElementById('modal-backdrop').classList.add('hidden');
+    }
+
+    async function showPositions(accountId) {
+      const modal = document.getElementById('modal-content');
+      modal.innerHTML = '<h3>' + (currentAccountName || '账户') + ' - 持仓</h3><p>加载中...</p>';
+      try {
+        const positions = await api('/accounts/' + accountId + '/positions');
+        const targets = await api('/targets');
+        modal.innerHTML = `
+          <h3>${currentAccountName || '账户'} - 持仓</h3>
+          <p><button type="button" class="btn btn-ghost" id="btn-back-positions">← 关闭</button></p>
+          <table style="width:100%; margin:0.5rem 0;">
+            <thead><tr><th>标的</th><th>代码</th><th>数量</th><th>最新价</th><th>市值</th><th></th></tr></thead>
+            <tbody id="positions-tbody">
+              ${(positions || []).map(p => `
+                <tr>
+                  <td>${p.target_name || '-'}</td>
+                  <td>${p.target_code || '-'}</td>
+                  <td>${(p.quantity ?? 0).toLocaleString('zh-CN')}</td>
+                  <td>${p.last_price != null ? p.last_price : '-'}</td>
+                  <td>${(p.market_value ?? 0).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</td>
+                  <td><button type="button" class="btn btn-ghost btn-delete-position" data-position-id="${p.id}">删除</button></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <div class="card" style="margin-top:1rem;">
+            <h4 style="margin:0 0 0.5rem;">添加持仓</h4>
+            <form id="form-add-position">
+              <div class="form-group">
+                <label>标的</label>
+                <select name="target_id" required>
+                  <option value="">请选择</option>
+                  ${(targets || []).map(t => `<option value="${t.id}">${t.name} (${t.code})</option>`).join('')}
+                </select>
+              </div>
+              <div class="form-group">
+                <label>数量</label>
+                <input type="number" name="quantity" step="any" required placeholder="0" />
+              </div>
+              <button type="submit" class="btn btn-primary">添加</button>
+            </form>
+          </div>
+          <div class="modal-actions" style="margin-top:1rem;">
+            <button type="button" class="btn btn-ghost" onclick="closeModal()">关闭</button>
+          </div>
+        `;
+        document.getElementById('btn-back-positions').addEventListener('click', closeModal);
+        document.getElementById('form-add-position').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          await api('/accounts/' + accountId + '/positions', {
+            method: 'POST',
+            body: JSON.stringify({ target_id: parseInt(fd.get('target_id'), 10), quantity: parseFloat(fd.get('quantity')) || 0 })
+          });
+          showPositions(accountId);
+        });
+        modal.querySelectorAll('.btn-delete-position').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('确定删除该持仓？')) return;
+            await api('/accounts/' + accountId + '/positions/' + btn.dataset.positionId, { method: 'DELETE' });
+            showPositions(accountId);
+          });
+        });
+      } catch (e) {
+        modal.innerHTML = '<h3>持仓</h3><p class="error">' + (e.message || '加载失败') + '</p><button type="button" class="btn btn-ghost" id="btn-positions-error-back">返回</button>';
+        modal.querySelector('#btn-positions-error-back')?.addEventListener('click', closeModal);
+      }
+    }
+
+    async function showBalance(accountId) {
+      const modal = document.getElementById('modal-content');
+      modal.innerHTML = '<h3>' + (currentAccountName || '账户') + ' - 余额</h3><p>加载中...</p>';
+      try {
+        const balance = await api('/accounts/' + accountId + '/balance');
+        const history = await api('/accounts/' + accountId + '/balance/history?limit=20').catch(() => []);
+        modal.innerHTML = `
+          <h3>${currentAccountName || '账户'} - 余额</h3>
+          <p><button type="button" class="btn btn-ghost" id="btn-back-balance">← 关闭</button></p>
+          <div class="stat-row"><span>当前余额</span><span class="total-value">${balance != null && balance.amount != null ? Number(balance.amount).toLocaleString('zh-CN', { minimumFractionDigits: 2 }) : '-'}</span></div>
+          <div class="form-group" style="margin-top:1rem;">
+            <label>记录新余额</label>
+            <form id="form-set-balance">
+              <input type="number" name="amount" step="0.01" required placeholder="金额" style="margin-right:0.5rem;" />
+              <button type="submit" class="btn btn-primary">保存</button>
+            </form>
+          </div>
+          <h4 style="margin:1rem 0 0.5rem;">历史记录</h4>
+          <table style="width:100%; font-size:0.9rem;">
+            <thead><tr><th>时间</th><th>金额</th></tr></thead>
+            <tbody>
+              ${(Array.isArray(history) ? history : []).map(h => `
+                <tr>
+                  <td>${new Date(h.recorded_at).toLocaleString('zh-CN')}</td>
+                  <td>${(h.amount ?? 0).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <div class="modal-actions" style="margin-top:1rem;">
+            <button type="button" class="btn btn-ghost" onclick="closeModal()">关闭</button>
+          </div>
+        `;
+        document.getElementById('btn-back-balance').addEventListener('click', closeModal);
+        document.getElementById('form-set-balance').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          await api('/accounts/' + accountId + '/balance', {
+            method: 'POST',
+            body: JSON.stringify({ amount: parseFloat(fd.get('amount')) || 0 })
+          });
+          showBalance(accountId);
+        });
+      } catch (e) {
+        modal.innerHTML = '<h3>余额</h3><p class="error">' + (e.message || '加载失败') + '</p><button type="button" class="btn btn-ghost" id="btn-balance-error-back">返回</button>';
+        modal.querySelector('#btn-balance-error-back')?.addEventListener('click', closeModal);
+      }
+    }
+    document.getElementById('modal-backdrop').addEventListener('click', (e) => {
+      if (e.target.id === 'modal-backdrop') closeModal();
+    });
+
+    async function loadTargets() {
+      try {
+        const targets = await api('/targets');
+        const listEl = document.getElementById('targets-list');
+        listEl.innerHTML = `
+          <table>
+            <thead><tr><th>市场</th><th>代码</th><th>名称</th><th>币种</th><th>最新价</th><th>更新时间</th></tr></thead>
+            <tbody>
+              ${targets.map(t => `
+                <tr>
+                  <td>${t.market}</td>
+                  <td>${t.code}</td>
+                  <td>${t.name}</td>
+                  <td>${t.currency}</td>
+                  <td>${t.last_price != null ? t.last_price : '-'}</td>
+                  <td>${t.price_updated_at ? new Date(t.price_updated_at).toLocaleString('zh-CN') : '-'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      } catch (e) {
+        document.getElementById('targets-list').innerHTML = '<p class="error">加载失败</p>';
+      }
+    }
+    document.getElementById('btn-refresh-prices').addEventListener('click', async () => {
+      try {
+        const r = await api('/price/refresh-all', { method: 'POST' });
+        alert('已更新 ' + r.updated_count + ' 个标的价格');
+        loadTargets();
+      } catch (e) {
+        alert(e.message || '刷新失败');
+      }
+    });
+
+    async function loadSnapshots() {
+      try {
+        const [list, series] = await Promise.all([
+          api('/snapshots?limit=50'),
+          api('/snapshots/series?days=365')
+        ]);
+        const listEl = document.getElementById('snapshots-list');
+        listEl.innerHTML = `
+          <table>
+            <thead><tr><th>时间</th><th>类型</th><th>总资产</th></tr></thead>
+            <tbody>
+              ${(list || []).slice(0, 20).map(s => `
+                <tr>
+                  <td>${new Date(s.snapshot_at).toLocaleString('zh-CN')}</td>
+                  <td>${s.trigger_type}</td>
+                  <td>${(s.total_value_cny ?? 0).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        const seriesData = series || [];
+        const dates = seriesData.map(p => p.date);
+        const values = seriesData.map(p => p.value);
+        const returns = seriesData.map(p => p.return_pct);
+        const lineChart = echarts.init(document.getElementById('series-chart'));
+        lineChart.setOption({
+          tooltip: { trigger: 'axis' },
+          grid: { left: 50, right: 20, top: 20, bottom: 30 },
+          xAxis: { type: 'category', data: dates, axisLine: { lineStyle: { color: '#2d3a4f' } } },
+          yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: '#2d3a4f' } } },
+          series: [{ type: 'line', data: values, smooth: true, lineStyle: { color: '#58a6ff' }, areaStyle: { color: 'rgba(88,166,255,0.2)' } }]
+        });
+        const returnChart = echarts.init(document.getElementById('return-chart'));
+        returnChart.setOption({
+          tooltip: { trigger: 'axis' },
+          grid: { left: 50, right: 20, top: 20, bottom: 30 },
+          xAxis: { type: 'category', data: dates, axisLine: { lineStyle: { color: '#2d3a4f' } } },
+          yAxis: { type: 'value', name: '%', axisLine: { show: false }, splitLine: { lineStyle: { color: '#2d3a4f' } } },
+          series: [{ type: 'line', data: returns, smooth: true, lineStyle: { color: '#3fb950' }, areaStyle: { color: 'rgba(63,185,80,0.2)' } }]
+        });
+      } catch (e) {
+        document.getElementById('snapshots-list').innerHTML = '<p class="error">加载失败</p>';
+      }
+    }
+
+    document.getElementById('btn-add-account').addEventListener('click', () => {
+      const modal = document.getElementById('modal-content');
+      modal.innerHTML = `
+        <h3>添加账户</h3>
+        <form id="form-add-account">
+          <div class="form-group">
+            <label>名称</label>
+            <input type="text" name="name" required placeholder="如：海通证券" />
+          </div>
+          <div class="form-group">
+            <label>币种</label>
+            <select name="currency">
+              <option value="CNY">CNY</option>
+              <option value="USD">USD</option>
+              <option value="HKD">HKD</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>类型</label>
+            <select name="type">
+              <option value="asset">资产账户</option>
+              <option value="credit">信用账户</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>子类型</label>
+            <select name="subtype">
+              <option value="investment">投资账户</option>
+              <option value="savings">储蓄账户</option>
+              <option value="other">其他</option>
+            </select>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" onclick="closeModal()">取消</button>
+            <button type="submit" class="btn btn-primary">添加</button>
+          </div>
+        </form>
+      `;
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      document.getElementById('form-add-account').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        await api('/accounts', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: fd.get('name'),
+            currency: fd.get('currency'),
+            type: fd.get('type'),
+            subtype: fd.get('subtype')
+          })
+        });
+        closeModal();
+        loadAccounts();
+        loadDashboard();
+      });
+    });
+
+    document.getElementById('btn-add-target').addEventListener('click', () => {
+      const modal = document.getElementById('modal-content');
+      modal.innerHTML = `
+        <h3>添加投资标的</h3>
+        <form id="form-add-target">
+          <div class="form-group">
+            <label>市场</label>
+            <select name="market" id="target-market">
+              <option value="A_SHARE">A股</option>
+              <option value="HK">港股</option>
+              <option value="US">美股</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>代码</label>
+            <input type="text" name="code" id="target-code" required placeholder="如 SH600519 / 00700" />
+            <small style="color: var(--text-muted); font-size: 0.85rem;">输入代码后将自动查询名称</small>
+          </div>
+          <div class="form-group">
+            <label>名称</label>
+            <input type="text" name="name" id="target-name" readonly placeholder="输入代码后自动填充" style="background: var(--surface2); cursor: not-allowed;" />
+          </div>
+          <div class="form-group">
+            <label>币种</label>
+            <input type="text" name="currency" id="target-currency" readonly style="background: var(--surface2); cursor: not-allowed;" />
+            <small style="color: var(--text-muted); font-size: 0.85rem;">根据市场自动设置</small>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" onclick="closeModal()">取消</button>
+            <button type="submit" class="btn btn-primary">添加</button>
+          </div>
+        </form>
+      `;
+      document.getElementById('modal-backdrop').classList.remove('hidden');
+      const codeInput = document.getElementById('target-code');
+      const nameInput = document.getElementById('target-name');
+      const currencyInput = document.getElementById('target-currency');
+      const marketSelect = document.getElementById('target-market');
+      
+      // 根据市场自动设置币种
+      const updateCurrency = () => {
+        const market = marketSelect.value;
+        if (market === 'A_SHARE') {
+          currencyInput.value = 'CNY';
+        } else if (market === 'HK') {
+          currencyInput.value = 'HKD';
+        } else if (market === 'US') {
+          currencyInput.value = 'USD';
+        } else {
+          currencyInput.value = 'CNY';
+        }
+      };
+      updateCurrency(); // 初始化
+      marketSelect.addEventListener('change', updateCurrency);
+      
+      let lookupTimeout = null;
+      codeInput.addEventListener('input', () => {
+        clearTimeout(lookupTimeout);
+        const code = codeInput.value.trim();
+        if (code.length < 3) {
+          nameInput.value = '';
+          return;
+        }
+        lookupTimeout = setTimeout(async () => {
+          try {
+            const market = marketSelect.value;
+            const result = await api(`/price/lookup?market=${encodeURIComponent(market)}&code=${encodeURIComponent(code)}`);
+            if (result && result.name) {
+              nameInput.value = result.name;
+            } else {
+              nameInput.value = '';
+            }
+          } catch (e) {
+            nameInput.value = '';
+          }
+        }, 500);
+      });
+      marketSelect.addEventListener('change', () => {
+        if (codeInput.value.trim().length >= 3) {
+          codeInput.dispatchEvent(new Event('input'));
+        }
+      });
+      document.getElementById('form-add-target').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        await api('/targets', {
+          method: 'POST',
+          body: JSON.stringify({
+            market: fd.get('market'),
+            code: fd.get('code').trim(),
+            name: fd.get('name') || '',
+            currency: fd.get('currency')
+          })
+        });
+        closeModal();
+        loadTargets();
+      });
+    });
+
+    if (token && user) showApp();
+    else showAuth();
+  </script>
+</body>
+</html>

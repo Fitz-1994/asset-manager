@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.assetmanager.mapper.SnapshotDetailMapper">
+
+    <resultMap id="BaseResultMap" type="com.assetmanager.entity.SnapshotDetail">
+        <id column="id" property="id"/>
+        <result column="snapshot_id" property="snapshotId"/>
+        <result column="account_id" property="accountId"/>
+        <result column="value" property="value"/>
+        <result column="currency" property="currency"/>
+    </resultMap>
+
+    <insert id="insert">
+        INSERT INTO snapshot_details (snapshot_id, account_id, value, currency)
+        VALUES (#{snapshotId}, #{accountId}, #{value}, #{currency})
+        <selectKey keyProperty="id" resultType="long" order="AFTER">
+            SELECT last_insert_rowid()
+        </selectKey>
+    </insert>
+
+    <select id="findBySnapshotId" resultMap="BaseResultMap">
+        SELECT id, snapshot_id, account_id, value, currency FROM snapshot_details WHERE snapshot_id = #{snapshotId}
+    </select>
+</mapper>
