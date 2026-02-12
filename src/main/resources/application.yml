@@ -21,7 +21,7 @@ mybatis:
 
 # 与前端 /api 前缀一致
 server:
-  port: 8000
+  port: 80
   servlet:
     context-path: /
 
