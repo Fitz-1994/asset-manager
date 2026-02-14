@@ -989,19 +989,39 @@
     });
 
     // Mobile menu toggle
-    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-    const sidebar = document.getElementById('sidebar');
-    const mobileOverlay = document.getElementById('mobile-overlay');
+    function initMobileMenu() {
+      const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+      const sidebar = document.getElementById('sidebar');
+      const mobileOverlay = document.getElementById('mobile-overlay');
 
-    if (mobileMenuBtn && sidebar && mobileOverlay) {
+      if (!mobileMenuBtn || !sidebar || !mobileOverlay) return;
+
+      // Force initial state based on screen width
+      if (window.innerWidth <= 768) {
+        sidebar.style.left = '-220px';
+        mobileMenuBtn.style.display = 'block';
+      } else {
+        sidebar.style.left = '0';
+        mobileMenuBtn.style.display = 'none';
+      }
+
       mobileMenuBtn.addEventListener('click', () => {
-        sidebar.classList.toggle('open');
-        mobileOverlay.classList.toggle('show');
+        const isOpen = sidebar.classList.contains('open');
+        if (isOpen) {
+          sidebar.classList.remove('open');
+          mobileOverlay.classList.remove('show');
+          sidebar.style.left = '-220px';
+        } else {
+          sidebar.classList.add('open');
+          mobileOverlay.classList.add('show');
+          sidebar.style.left = '0';
+        }
       });
 
       mobileOverlay.addEventListener('click', () => {
         sidebar.classList.remove('open');
         mobileOverlay.classList.remove('show');
+        sidebar.style.left = '-220px';
       });
 
       // Close menu when clicking nav items on mobile
@@ -1010,12 +1030,28 @@
           if (window.innerWidth <= 768) {
             sidebar.classList.remove('open');
             mobileOverlay.classList.remove('show');
+            sidebar.style.left = '-220px';
           }
         });
       });
+
+      // Handle window resize
+      window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+          sidebar.classList.remove('open');
+          mobileOverlay.classList.remove('show');
+          sidebar.style.left = '0';
+          mobileMenuBtn.style.display = 'none';
+        } else {
+          mobileMenuBtn.style.display = 'block';
+          if (!sidebar.classList.contains('open')) {
+            sidebar.style.left = '-220px';
+          }
+        }
+      });
     }
 
-    if (token && user) showApp();
+    if (token && user) { showApp(); initMobileMenu(); }
     else showAuth();
   </script>
 </body>
