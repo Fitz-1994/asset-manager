@@ -28,4 +28,8 @@
     <select id="existsByUsername" resultType="boolean">
         SELECT COUNT(*) > 0 FROM users WHERE username = #{username}
     </select>
+
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT id, username, password_hash, created_at FROM users
+    </select>
 </mapper>
