@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -30,30 +31,31 @@ public class PriceFetcherService {
 
     private HttpHeaders createHeaders() {
         HttpHeaders headers = new HttpHeaders();
-        headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
-        headers.set("Referer", "https://finance.sina.com.cn/");
+        headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+        headers.set("Referer", "https://finance.qq.com/");
         headers.set("Accept", "*/*");
         return headers;
     }
 
     public Optional<Double> fetchPrice(String market, String code) {
-        String symbol = toSinaSymbol(market, code);
+        String symbol = toTencentSymbol(market, code);
         if (symbol == null || symbol.isEmpty()) return Optional.empty();
-        String url = "https://hq.sinajs.cn/list=" + symbol;
+        String url = "http://qt.gtimg.cn/q=" + symbol;
         try {
             HttpEntity<String> entity = new HttpEntity<>(createHeaders());
             ResponseEntity<String> resp = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
             if (resp.getStatusCode().is2xxSuccessful() && resp.getBody() != null) {
                 String body = resp.getBody();
-                int q = body.indexOf('"');
-                if (q >= 0) {
-                    int q2 = body.indexOf('"', q + 1);
-                    if (q2 > q) {
-                        String part = body.substring(q + 1, q2);
-                        String[] cols = part.split(",");
-                        if (cols.length >= 2) {
-                            return Optional.of(Double.parseDouble(cols[1].trim()));
-                        }
+                // 腾讯API返回格式: v_symbol="0~name~code~...~price~..."
+                int eq = body.indexOf('=');
+                if (eq >= 0) {
+                    String data = body.substring(eq + 1).trim();
+                    if (data.startsWith("\"") && data.endsWith("\"")) {
+                        data = data.substring(1, data.length() - 1);
+                    }
+                    String[] cols = data.split("~");
+                    if (cols.length >= 5) {
+                        return Optional.of(Double.parseDouble(cols[3].trim()));
                     }
                 }
             }
@@ -77,54 +79,55 @@ public class PriceFetcherService {
     }
 
     public Optional<NameAndPrice> fetchNameAndPrice(String market, String code) {
-        String symbol = toSinaSymbol(market, code);
+        String symbol = toTencentSymbol(market, code);
         if (symbol == null || symbol.isEmpty()) {
             log.debug("fetchNameAndPrice: empty symbol for market={}, code={}", market, code);
             return Optional.empty();
         }
-        String url = "https://hq.sinajs.cn/list=" + symbol;
+        String url = "http://qt.gtimg.cn/q=" + symbol;
         log.debug("fetchNameAndPrice: requesting URL={}", url);
         try {
             HttpEntity<String> entity = new HttpEntity<>(createHeaders());
             ResponseEntity<String> resp = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
             if (resp.getStatusCode().is2xxSuccessful() && resp.getBody() != null) {
                 String body = resp.getBody();
-                log.debug("fetchNameAndPrice: response body length={}, preview={}", body.length(), body.length() > 200 ? body.substring(0, 200) : body);
-                int q = body.indexOf('"');
-                if (q >= 0) {
-                    int q2 = body.indexOf('"', q + 1);
-                    if (q2 > q) {
-                        String part = body.substring(q + 1, q2);
-                        String[] cols = part.split(",");
-                        log.debug("fetchNameAndPrice: parsed {} columns, first few: {}", cols.length, cols.length > 0 ? String.join(",", java.util.Arrays.copyOf(cols, Math.min(5, cols.length))) : "");
-                        if (cols.length >= 2) {
-                            String name = cols[0].trim();
-                            Double price = null;
-                            try {
-                                price = Double.parseDouble(cols[1].trim());
-                            } catch (NumberFormatException e) {
-                                log.debug("fetchNameAndPrice: failed to parse price from '{}', trying column 3", cols[1]);
-                                // 港股可能价格在第3列（索引2），尝试解析
-                                if (cols.length >= 3) {
-                                    try {
-                                        price = Double.parseDouble(cols[2].trim());
-                                    } catch (NumberFormatException ignored) { }
-                                }
-                            }
-                            if (!name.isEmpty()) {
-                                log.debug("fetchNameAndPrice: success, name={}, price={}", name, price);
-                                return Optional.of(new NameAndPrice(name, price));
-                            } else {
-                                log.debug("fetchNameAndPrice: empty name");
-                            }
-                        } else {
-                            log.debug("fetchNameAndPrice: insufficient columns, got {}", cols.length);
-                        }
-                    } else {
-                        log.debug("fetchNameAndPrice: no closing quote found");
+                log.debug("fetchNameAndPrice: response body: {}", body);
+                
+                // 腾讯API返回格式: v_symbol="0~name~code~...~price~..."
+                // 列0: 序号, 列1: 名称, 列2: 代码, 列3: 当前价格, ...
+                int eq = body.indexOf('=');
+                if (eq >= 0) {
+                    String data = body.substring(eq + 1).trim();
+                    // 去掉首尾引号
+                    if (data.startsWith("\"") && data.endsWith("\"")) {
+                        data = data.substring(1, data.length() - 1);
                     }
-                } else {
-                    log.debug("fetchNameAndPrice: no opening quote found in response");
+                    String[] cols = data.split("~");
+                    log.debug("fetchNameAndPrice: parsed {} columns", cols.length);
+                    
+                    if (cols.length >= 4) {
+                        // 处理编码问题 - 腾讯返回的是GBK/GB2312编码
+                        String name = cols[1].trim();
+                        try {
+                            // 尝试从GBK转换为UTF-8
+                            byte[] bytes = name.getBytes(StandardCharsets.ISO_8859_1);
+                            name = new String(bytes, StandardCharsets.UTF_8).trim();
+                        } catch (Exception e) {
+                            log.debug("Encoding conversion failed, using original: {}", name);
+                        }
+                        
+                        Double price = null;
+                        try {
+                            price = Double.parseDouble(cols[3].trim());
+                        } catch (NumberFormatException e) {
+                            log.debug("Failed to parse price from '{}'", cols[3]);
+                        }
+                        
+                        if (!name.isEmpty()) {
+                            log.debug("fetchNameAndPrice: success, name={}, price={}", name, price);
+                            return Optional.of(new NameAndPrice(name, price));
+                        }
+                    }
                 }
             } else {
                 log.warn("fetchNameAndPrice: non-2xx status or empty body, status={}", resp.getStatusCode());
@@ -135,32 +138,36 @@ public class PriceFetcherService {
         return Optional.empty();
     }
 
-    private static String toSinaSymbol(String market, String code) {
+    private static String toTencentSymbol(String market, String code) {
         if (code == null) return "";
         String raw = code.trim().toUpperCase();
+        
         if ("A_SHARE".equals(market)) {
-            if (raw.startsWith("SH")) return "sh" + raw.substring(2);
-            if (raw.startsWith("SZ")) return "sz" + raw.substring(2);
-            char first = raw.isEmpty() ? 0 : raw.charAt(0);
-            String prefix = (first == '6' || first == '5') ? "sh" : "sz";
-            return prefix + raw;
+            // 移除可能的前缀
+            String codeOnly = raw.replaceFirst("^SH", "").replaceFirst("^SZ", "");
+            // 判断是上海还是深圳
+            if (raw.startsWith("SH") || codeOnly.startsWith("6") || codeOnly.startsWith("5")) {
+                return "sh" + codeOnly;
+            } else {
+                return "sz" + codeOnly;
+            }
         }
         if ("HK".equals(market)) {
             // 移除可能的 HK 前缀
             String codeOnly = raw.replaceFirst("^HK", "");
             // 港股代码需要补零到5位（如 700 -> 00700）
             try {
-                // 尝试解析为数字，如果是纯数字则补零
                 int num = Integer.parseInt(codeOnly);
                 codeOnly = String.format("%05d", num);
             } catch (NumberFormatException e) {
-                // 如果不是纯数字（如指数代码 HSI），保持原样
+                // 如果不是纯数字，保持原样
             }
             return "hk" + codeOnly;
         }
         if ("US".equals(market)) {
-            // 美股格式: gb_<SYMBOL> (小写)
-            return "gb_" + raw.toLowerCase();
+            // 美股格式: usSYMBOL (小写)
+            String codeOnly = raw.replaceFirst("^US", "").toLowerCase();
+            return "us" + codeOnly;
         }
         return "";
     }
@@ -179,7 +186,6 @@ public class PriceFetcherService {
             }
             // 更新名称（如果查询到名称且当前名称为空或不同）
             if (np.getName() != null && !np.getName().isEmpty()) {
-                // 如果当前名称为空，或者名称发生变化，则更新
                 if (t.getName() == null || t.getName().isEmpty() || !t.getName().equals(np.getName())) {
                     t.setName(np.getName());
                 }
