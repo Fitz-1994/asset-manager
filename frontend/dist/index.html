@@ -222,17 +222,18 @@
         flex-direction: column;
       }
       .sidebar {
-        position: fixed;
-        left: -220px;
-        top: 0;
-        bottom: 0;
-        width: 220px;
+        display: block !important;
+        position: fixed !important;
+        left: -220px !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        width: 220px !important;
         z-index: 200;
         transition: left 0.3s ease;
         padding-top: 3.5rem;
       }
       .sidebar.open {
-        left: 0;
+        left: 0 !important;
       }
       .mobile-header {
         display: flex !important;
@@ -271,8 +272,10 @@
         display: block;
       }
       .main {
-        padding: 1rem;
-        margin-top: 50px;
+        padding: 1rem !important;
+        margin-top: 50px !important;
+        margin-left: 0 !important;
+        width: 100% !important;
       }
       .auth-card {
         margin: 1rem;
@@ -313,6 +316,9 @@
       .mobile-header,
       .mobile-overlay {
         display: none !important;
+      }
+      .sidebar {
+        left: 0 !important;
       }
     }
   </style>
