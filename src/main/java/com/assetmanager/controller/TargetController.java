@@ -5,6 +5,7 @@ import com.assetmanager.dto.InvestmentTargetResponse;
 import com.assetmanager.entity.InvestmentTarget;
 import com.assetmanager.entity.User;
 import com.assetmanager.mapper.InvestmentTargetMapper;
+import com.assetmanager.service.SnapshotService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -19,9 +20,11 @@ import java.util.stream.Collectors;
 public class TargetController {
 
     private final InvestmentTargetMapper targetMapper;
+    private final SnapshotService snapshotService;
 
-    public TargetController(InvestmentTargetMapper targetMapper) {
+    public TargetController(InvestmentTargetMapper targetMapper, SnapshotService snapshotService) {
         this.targetMapper = targetMapper;
+        this.snapshotService = snapshotService;
     }
 
     @GetMapping
@@ -62,6 +65,14 @@ public class TargetController {
         t.setCurrency(currency);
         t.setCreatedAt(Instant.now());
         targetMapper.insert(t);
+        
+        // 添加标的后自动创建快照
+        try {
+            snapshotService.createManualSnapshot(user.getId());
+        } catch (Exception e) {
+            // 忽略快照创建失败
+        }
+        
         return toResponse(t);
     }
 
