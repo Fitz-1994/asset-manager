@@ -215,6 +215,106 @@
     }
     .modal h3 { margin: 0 0 1rem; }
     .modal-actions { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end; }
+
+    /* Mobile Responsive Styles */
+    @media (max-width: 768px) {
+      .app-layout {
+        flex-direction: column;
+      }
+      .sidebar {
+        position: fixed;
+        left: -220px;
+        top: 0;
+        bottom: 0;
+        width: 220px;
+        z-index: 200;
+        transition: left 0.3s ease;
+        padding-top: 3.5rem;
+      }
+      .sidebar.open {
+        left: 0;
+      }
+      .mobile-header {
+        display: flex !important;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 50px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 1rem;
+        z-index: 150;
+      }
+      .mobile-header .title {
+        font-weight: 600;
+        font-size: 1rem;
+      }
+      .mobile-menu-btn {
+        background: none;
+        border: none;
+        color: var(--text);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0.25rem;
+      }
+      .mobile-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 180;
+      }
+      .mobile-overlay.show {
+        display: block;
+      }
+      .main {
+        padding: 1rem;
+        margin-top: 50px;
+      }
+      .auth-card {
+        margin: 1rem;
+        padding: 1.25rem;
+      }
+      .card {
+        padding: 1rem;
+      }
+      .total-value {
+        font-size: 1.25rem;
+      }
+      .chart-container {
+        height: 250px;
+      }
+      .top-bar {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: stretch;
+      }
+      .top-bar h2 {
+        text-align: center;
+      }
+      .top-bar .btn {
+        width: 100%;
+      }
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+      .modal {
+        min-width: auto;
+        width: calc(100% - 2rem);
+        margin: 1rem;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .mobile-header,
+      .mobile-overlay {
+        display: none !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -252,7 +352,13 @@
   </div>
 
   <div id="app-screen" class="app-layout hidden">
-    <aside class="sidebar">
+    <div class="mobile-header">
+      <button type="button" class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+      <span class="title">资产管理</span>
+      <span style="width: 24px;"></span>
+    </div>
+    <div class="mobile-overlay" id="mobile-overlay"></div>
+    <aside class="sidebar" id="sidebar">
       <div class="user">用户：<span id="current-username"></span></div>
       <button type="button" class="nav-item active" data-page="dashboard">总览</button>
       <button type="button" class="nav-item" data-page="accounts">账户</button>
@@ -872,6 +978,33 @@
         loadTargets();
       });
     });
+
+    // Mobile menu toggle
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const sidebar = document.getElementById('sidebar');
+    const mobileOverlay = document.getElementById('mobile-overlay');
+
+    if (mobileMenuBtn && sidebar && mobileOverlay) {
+      mobileMenuBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+        mobileOverlay.classList.toggle('show');
+      });
+
+      mobileOverlay.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        mobileOverlay.classList.remove('show');
+      });
+
+      // Close menu when clicking nav items on mobile
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+          if (window.innerWidth <= 768) {
+            sidebar.classList.remove('open');
+            mobileOverlay.classList.remove('show');
+          }
+        });
+      });
+    }
 
     if (token && user) showApp();
     else showAuth();

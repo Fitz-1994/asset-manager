@@ -1,10 +1,10 @@
-FROM eclipse-temurin:17-jdk-alpine AS builder
+FROM eclipse-temurin:17-jdk AS builder
 
 WORKDIR /app
 COPY . .
 RUN ./mvnw -q package -DskipTests
 
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
@@ -13,6 +13,9 @@ RUN mkdir -p data
 
 # 复制jar文件
 COPY --from=builder /app/target/asset-manager-0.1.0.jar app.jar
+
+# 复制前端静态文件
+COPY --from=builder /app/frontend/dist ./frontend/dist
 
 # 暴露端口
 EXPOSE 8000
