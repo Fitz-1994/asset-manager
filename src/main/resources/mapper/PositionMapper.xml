@@ -14,7 +14,7 @@
         INSERT INTO positions (account_id, target_id, quantity, updated_at)
         VALUES (#{accountId}, #{targetId}, #{quantity}, #{updatedAt, typeHandler=com.assetmanager.mapper.InstantTypeHandler})
         <selectKey keyProperty="id" resultType="long" order="AFTER">
-            SELECT last_insert_rowid()
+            SELECT LAST_INSERT_ID()
         </selectKey>
     </insert>
 

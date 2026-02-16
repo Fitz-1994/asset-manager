@@ -17,7 +17,7 @@
         INSERT INTO investment_targets (market, code, name, currency, last_price, price_updated_at, created_at)
         VALUES (#{market}, #{code}, #{name}, #{currency}, #{lastPrice}, #{priceUpdatedAt, typeHandler=com.assetmanager.mapper.InstantTypeHandler}, #{createdAt, typeHandler=com.assetmanager.mapper.InstantTypeHandler})
         <selectKey keyProperty="id" resultType="long" order="AFTER">
-            SELECT last_insert_rowid()
+            SELECT LAST_INSERT_ID()
         </selectKey>
     </insert>
 
