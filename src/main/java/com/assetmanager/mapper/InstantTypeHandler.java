@@ -9,10 +9,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 
 @MappedTypes(Instant.class)
 public class InstantTypeHandler extends BaseTypeHandler<Instant> {
+
+    private static final DateTimeFormatter MYSQL_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, Instant parameter, JdbcType jdbcType) throws SQLException {
@@ -23,18 +27,30 @@ public class InstantTypeHandler extends BaseTypeHandler<Instant> {
     @Override
     public Instant getNullableResult(ResultSet rs, String columnName) throws SQLException {
         String s = rs.getString(columnName);
-        return s == null ? null : Instant.parse(s);
+        return parseInstant(s);
     }
 
     @Override
     public Instant getNullableResult(ResultSet rs, int columnIndex) throws SQLException {
         String s = rs.getString(columnIndex);
-        return s == null ? null : Instant.parse(s);
+        return parseInstant(s);
     }
 
     @Override
     public Instant getNullableResult(CallableStatement cs, int columnIndex) throws SQLException {
         String s = cs.getString(columnIndex);
-        return s == null ? null : Instant.parse(s);
+        return parseInstant(s);
+    }
+
+    private Instant parseInstant(String s) {
+        if (s == null) return null;
+        try {
+            // Try parsing as Instant first (ISO format with timezone)
+            return Instant.parse(s);
+        } catch (Exception e) {
+            // Fall back to MySQL datetime format (no timezone)
+            LocalDateTime ldt = LocalDateTime.parse(s, MYSQL_FORMAT);
+            return ldt.atOffset(ZoneOffset.UTC).toInstant();
+        }
     }
 }
