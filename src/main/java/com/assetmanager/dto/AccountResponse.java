@@ -7,7 +7,9 @@ public class AccountResponse {
     private Long user_id;
     private String name;
     private String currency;
+    private String currencyName;
     private String type;
+    private String typeName;
     private String subtype;
     private Instant created_at;
 
@@ -19,8 +21,12 @@ public class AccountResponse {
     public void setName(String name) { this.name = name; }
     public String getCurrency() { return currency; }
     public void setCurrency(String currency) { this.currency = currency; }
+    public String getCurrencyName() { return currencyName; }
+    public void setCurrencyName(String currencyName) { this.currencyName = currencyName; }
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
+    public String getTypeName() { return typeName; }
+    public void setTypeName(String typeName) { this.typeName = typeName; }
     public String getSubtype() { return subtype; }
     public void setSubtype(String subtype) { this.subtype = subtype; }
     public Instant getCreated_at() { return created_at; }

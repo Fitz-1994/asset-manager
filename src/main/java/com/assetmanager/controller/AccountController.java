@@ -88,7 +88,9 @@ public class AccountController {
         r.setUser_id(a.getUserId());
         r.setName(a.getName());
         r.setCurrency(a.getCurrency());
+        r.setCurrencyName(getCurrencyName(a.getCurrency()));
         r.setType(a.getType());
+        r.setTypeName(getTypeName(a.getType()));
         r.setSubtype(a.getSubtype());
         r.setCreated_at(a.getCreatedAt());
         return r;
@@ -100,10 +102,36 @@ public class AccountController {
         w.setUser_id(a.getUserId());
         w.setName(a.getName());
         w.setCurrency(a.getCurrency());
+        w.setCurrencyName(getCurrencyName(a.getCurrency()));
         w.setType(a.getType());
+        w.setTypeName(getTypeName(a.getType()));
         w.setSubtype(a.getSubtype());
         w.setCreated_at(a.getCreatedAt());
         w.setValue(accountValueService.getAccountValue(a));
         return w;
+    }
+
+    private String getCurrencyName(String currency) {
+        if (currency == null) return null;
+        return switch (currency) {
+            case "CNY" -> "人民币";
+            case "USD" -> "美元";
+            case "HKD" -> "港币";
+            case "EUR" -> "欧元";
+            case "GBP" -> "英镑";
+            case "JPY" -> "日元";
+            default -> currency;
+        };
+    }
+
+    private String getTypeName(String type) {
+        if (type == null) return null;
+        return switch (type) {
+            case "asset/savings" -> "储蓄账户";
+            case "asset/investment" -> "投资账户";
+            case "credit/card" -> "信用卡";
+            case "credit/loan" -> "贷款";
+            default -> type;
+        };
     }
 }
