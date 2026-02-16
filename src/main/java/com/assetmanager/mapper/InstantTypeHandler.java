@@ -9,13 +9,15 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.time.ZoneOffset;
 
 @MappedTypes(Instant.class)
 public class InstantTypeHandler extends BaseTypeHandler<Instant> {
 
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, Instant parameter, JdbcType jdbcType) throws SQLException {
-        ps.setString(i, parameter.toString());
+        // MySQL datetime format: YYYY-MM-DD HH:MM:SS
+        ps.setString(i, parameter.atOffset(ZoneOffset.UTC).toLocalDateTime().toString());
     }
 
     @Override
