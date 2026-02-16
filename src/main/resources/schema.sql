@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS manual_balances (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     account_id BIGINT NOT NULL,
     amount DOUBLE NOT NULL,
+    currency VARCHAR(10) NOT NULL DEFAULT 'CNY',
     recorded_at DATETIME NOT NULL,
     created_at DATETIME NOT NULL,
     FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
@@ -67,6 +68,16 @@ CREATE TABLE IF NOT EXISTS snapshot_details (
     currency VARCHAR(10) NOT NULL,
     FOREIGN KEY (snapshot_id) REFERENCES asset_snapshots(id) ON DELETE CASCADE,
     FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+);
+
+-- 汇率表
+CREATE TABLE IF NOT EXISTS exchange_rates (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    from_currency VARCHAR(10) NOT NULL,
+    to_currency VARCHAR(10) NOT NULL,
+    rate DOUBLE NOT NULL,
+    recorded_at DATETIME NOT NULL,
+    UNIQUE(from_currency, to_currency)
 );
 
 CREATE INDEX idx_accounts_user_id ON accounts(user_id);

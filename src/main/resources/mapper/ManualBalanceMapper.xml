@@ -6,25 +6,26 @@
         <id column="id" property="id"/>
         <result column="account_id" property="accountId"/>
         <result column="amount" property="amount"/>
+        <result column="currency" property="currency"/>
         <result column="recorded_at" property="recordedAt" typeHandler="com.assetmanager.mapper.InstantTypeHandler"/>
         <result column="created_at" property="createdAt" typeHandler="com.assetmanager.mapper.InstantTypeHandler"/>
     </resultMap>
 
     <insert id="insert">
-        INSERT INTO manual_balances (account_id, amount, recorded_at, created_at)
-        VALUES (#{accountId}, #{amount}, #{recordedAt, typeHandler=com.assetmanager.mapper.InstantTypeHandler}, #{createdAt, typeHandler=com.assetmanager.mapper.InstantTypeHandler})
+        INSERT INTO manual_balances (account_id, amount, currency, recorded_at, created_at)
+        VALUES (#{accountId}, #{amount}, #{currency}, #{recordedAt, typeHandler=com.assetmanager.mapper.InstantTypeHandler}, #{createdAt, typeHandler=com.assetmanager.mapper.InstantTypeHandler})
         <selectKey keyProperty="id" resultType="long" order="AFTER">
             SELECT LAST_INSERT_ID()
         </selectKey>
     </insert>
 
     <select id="findLatestByAccountId" resultMap="BaseResultMap">
-        SELECT id, account_id, amount, recorded_at, created_at FROM manual_balances
+        SELECT id, account_id, amount, currency, recorded_at, created_at FROM manual_balances
         WHERE account_id = #{accountId} ORDER BY recorded_at DESC LIMIT 1
     </select>
 
     <select id="findByAccountIdOrderByRecordedAtDesc" resultMap="BaseResultMap">
-        SELECT id, account_id, amount, recorded_at, created_at FROM manual_balances
+        SELECT id, account_id, amount, currency, recorded_at, created_at FROM manual_balances
         WHERE account_id = #{accountId} ORDER BY recorded_at DESC LIMIT #{limit}
     </select>
 </mapper>

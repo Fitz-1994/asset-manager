@@ -6,6 +6,7 @@ public class ManualBalance {
     private Long id;
     private Long accountId;
     private Double amount;
+    private String currency;
     private Instant recordedAt;
     private Instant createdAt;
 
@@ -15,6 +16,8 @@ public class ManualBalance {
     public void setAccountId(Long accountId) { this.accountId = accountId; }
     public Double getAmount() { return amount; }
     public void setAmount(Double amount) { this.amount = amount; }
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
     public Instant getRecordedAt() { return recordedAt; }
     public void setRecordedAt(Instant recordedAt) { this.recordedAt = recordedAt; }
     public Instant getCreatedAt() { return createdAt; }

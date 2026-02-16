@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.assetmanager.mapper.ExchangeRateMapper">
+
+    <resultMap id="BaseResultMap" type="com.assetmanager.entity.ExchangeRate">
+        <id column="id" property="id"/>
+        <result column="from_currency" property="fromCurrency"/>
+        <result column="to_currency" property="toCurrency"/>
+        <result column="rate" property="rate"/>
+        <result column="recorded_at" property="recordedAt" typeHandler="com.assetmanager.mapper.InstantTypeHandler"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO exchange_rates (from_currency, to_currency, rate, recorded_at)
+        VALUES (#{fromCurrency}, #{toCurrency}, #{rate}, #{recordedAt})
+    </insert>
+
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT * FROM exchange_rates ORDER BY from_currency, to_currency
+    </select>
+
+    <select id="findByFromAndTo" resultMap="BaseResultMap">
+        SELECT * FROM exchange_rates 
+        WHERE from_currency = #{from} AND to_currency = #{to}
+        ORDER BY recorded_at DESC LIMIT 1
+    </select>
+
+    <select id="findLatestByFromAndTo" resultMap="BaseResultMap">
+        SELECT * FROM exchange_rates 
+        WHERE from_currency = #{from} AND to_currency = #{to}
+        ORDER BY recorded_at DESC LIMIT 1
+    </select>
+
+    <update id="update">
+        UPDATE exchange_rates SET rate = #{rate}, recorded_at = #{recordedAt}
+        WHERE id = #{id}
+    </update>
+</mapper>

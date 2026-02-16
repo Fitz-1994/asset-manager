@@ -48,6 +48,7 @@ public class ManualBalanceController {
         ManualBalance mb = new ManualBalance();
         mb.setAccountId(accountId);
         mb.setAmount(body.getAmount() != null ? body.getAmount() : 0.0);
+        mb.setCurrency(acc.getCurrency() != null ? acc.getCurrency() : "CNY");
         mb.setRecordedAt(body.getRecorded_at() != null ? body.getRecorded_at() : Instant.now());
         mb.setCreatedAt(Instant.now());
         manualBalanceMapper.insert(mb);
@@ -75,6 +76,7 @@ public class ManualBalanceController {
         r.setId(m.getId());
         r.setAccount_id(m.getAccountId());
         r.setAmount(m.getAmount());
+        r.setCurrency(m.getCurrency());
         r.setRecorded_at(m.getRecordedAt());
         r.setCreated_at(m.getCreatedAt());
         return r;
