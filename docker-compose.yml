@@ -1,7 +1,35 @@
 services:
+  mysql:
+    image: mysql:8
+    container_name: mysql-asset-manager
+    environment:
+      MYSQL_ROOT_PASSWORD: asset123456
+      MYSQL_DATABASE: asset_manager
+      MYSQL_USER: asset
+      MYSQL_PASSWORD: asset123
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   asset-manager:
     build: .
-    network_mode: host
-    volumes:
-      - ./data:/app/data
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "80:80"
     restart: unless-stopped
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/asset_manager?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=asset
+      - SPRING_DATASOURCE_PASSWORD=asset123
+
+volumes:
+  mysql-data:

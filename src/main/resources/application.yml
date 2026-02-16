@@ -5,8 +5,10 @@ spring:
     resources:
       static-locations: classpath:/static/,file:./frontend/dist/
   datasource:
-    url: jdbc:sqlite:./data/asset_manager.db
-    driver-class-name: org.sqlite.JDBC
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://mysql:3306/asset_manager?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${SPRING_DATASOURCE_USERNAME:asset}
+    password: ${SPRING_DATASOURCE_PASSWORD:asset123}
+    driver-class-name: com.mysql.cj.jdbc.Driver
   sql:
     init:
       mode: always
