@@ -660,10 +660,29 @@
             <form id="form-add-position">
               <div class="form-group">
                 <label>标的</label>
-                <select name="target_id" required>
+                <select name="target_id" id="position-target-select" required>
                   <option value="">请选择</option>
+                  <option value="__new__">+ 创建新标的</option>
                   ${(targets || []).map(t => `<option value="${t.id}">${t.name} (${t.code})</option>`).join('')}
                 </select>
+              </div>
+              <div id="new-target-fields" class="hidden">
+                <div class="form-group">
+                  <label>市场</label>
+                  <select name="target_market" id="new-target-market">
+                    <option value="A_SHARE">A股</option>
+                    <option value="HK">港股</option>
+                    <option value="US">美股</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>代码</label>
+                  <input type="text" name="target_code" id="new-target-code" placeholder="如 SH600519 / 00700" />
+                </div>
+                <div class="form-group">
+                  <label>名称（可选）</label>
+                  <input type="text" name="target_name" id="new-target-name" placeholder="如 贵州茅台" />
+                </div>
               </div>
               <div class="form-group">
                 <label>数量</label>
@@ -677,12 +696,43 @@
           </div>
         `;
         document.getElementById('btn-back-positions').addEventListener('click', closeModal);
+        
+        // Handle target selection change
+        document.getElementById('position-target-select').addEventListener('change', function() {
+          const newTargetFields = document.getElementById('new-target-fields');
+          if (this.value === '__new__') {
+            newTargetFields.classList.remove('hidden');
+            document.getElementById('new-target-code').setAttribute('required', 'required');
+          } else {
+            newTargetFields.classList.add('hidden');
+            document.getElementById('new-target-code').removeAttribute('required');
+          }
+        });
+        
         document.getElementById('form-add-position').addEventListener('submit', async (e) => {
           e.preventDefault();
           const fd = new FormData(e.target);
+          const targetId = fd.get('target_id');
+          
+          let body;
+          if (targetId === '__new__') {
+            // Creating new target with position
+            body = {
+              target_market: fd.get('target_market'),
+              target_code: fd.get('target_code'),
+              target_name: fd.get('target_name'),
+              quantity: parseFloat(fd.get('quantity')) || 0
+            };
+          } else {
+            body = {
+              target_id: parseInt(targetId, 10),
+              quantity: parseFloat(fd.get('quantity')) || 0
+            };
+          }
+          
           await api('/accounts/' + accountId + '/positions', {
             method: 'POST',
-            body: JSON.stringify({ target_id: parseInt(fd.get('target_id'), 10), quantity: parseFloat(fd.get('quantity')) || 0 })
+            body: JSON.stringify(body)
           });
           showPositions(accountId);
         });

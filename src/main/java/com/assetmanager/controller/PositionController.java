@@ -52,7 +52,39 @@ public class PositionController {
         Account acc = getAccountForUser(accountId, user.getId());
         if (!"investment".equals(acc.getSubtype()))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Account is not an investment account");
-        Position pos = positionMapper.findByAccountIdAndTargetId(accountId, body.getTarget_id());
+        
+        Long targetId = body.getTarget_id();
+        
+        // If target_id is not provided but target info is provided, create the target first
+        if (targetId == null && body.getTarget_code() != null && !body.getTarget_code().isEmpty()) {
+            // Check if target already exists
+            InvestmentTarget existing = investmentTargetMapper.findByMarketAndCode(
+                body.getTarget_market(), body.getTarget_code().trim());
+            if (existing != null) {
+                targetId = existing.getId();
+            } else {
+                // Create new target
+                InvestmentTarget newTarget = new InvestmentTarget();
+                newTarget.setMarket(body.getTarget_market());
+                newTarget.setCode(body.getTarget_code().trim());
+                newTarget.setName(body.getTarget_name() != null ? body.getTarget_name() : "");
+                // Set default currency based on market
+                String currency = body.getTarget_currency();
+                if (currency == null || currency.isEmpty()) {
+                    currency = getDefaultCurrencyByMarket(body.getTarget_market());
+                }
+                newTarget.setCurrency(currency);
+                newTarget.setCreatedAt(Instant.now());
+                investmentTargetMapper.insert(newTarget);
+                targetId = newTarget.getId();
+            }
+        }
+        
+        if (targetId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请选择或创建标的");
+        }
+        
+        Position pos = positionMapper.findByAccountIdAndTargetId(accountId, targetId);
         if (pos != null) {
             pos.setQuantity(body.getQuantity() != null ? body.getQuantity() : 0.0);
             pos.setUpdatedAt(Instant.now());
@@ -60,7 +92,7 @@ public class PositionController {
         } else {
             pos = new Position();
             pos.setAccountId(accountId);
-            pos.setTargetId(body.getTarget_id());
+            pos.setTargetId(targetId);
             pos.setQuantity(body.getQuantity() != null ? body.getQuantity() : 0.0);
             pos.setUpdatedAt(Instant.now());
             positionMapper.insert(pos);
@@ -96,6 +128,20 @@ public class PositionController {
         if (a == null || !a.getUserId().equals(userId))
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found");
         return a;
+    }
+
+    private String getDefaultCurrencyByMarket(String market) {
+        if (market == null) return "CNY";
+        switch (market) {
+            case "A_SHARE":
+                return "CNY";
+            case "HK":
+                return "HKD";
+            case "US":
+                return "USD";
+            default:
+                return "CNY";
+        }
     }
 
     private PositionResponse toResponse(Position p) {
